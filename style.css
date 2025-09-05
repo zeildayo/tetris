@@ -1,4 +1,28 @@
-/* 既存の h1 スタイルを .game-title に変更 */
+:root {
+    --bg-color: #1a1a2e;
+    --primary-color: #0f3460;
+    --accent-color: #e94560;
+    --text-color: #e0e0e0;
+    --border-color: #533483;
+    --game-board-bg: #0d0d21;
+    --score-color: #fc72ff;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
 h1.game-title {
     font-family: 'Press Start 2P', cursive;
     font-size: 3.5em;
@@ -8,30 +32,160 @@ h1.game-title {
     letter-spacing: 5px;
 }
 
-/* ↓↓↓ ここから末尾に追加 ↓↓↓ */
+.game-container {
+    display: flex;
+    flex-direction: row;
+    background-color: var(--primary-color);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    border: 2px solid var(--border-color);
+    gap: 30px;
+    align-items: flex-start;
+}
 
-/* スタート画面のスタイル */
+canvas#tetris {
+    border: 4px solid var(--border-color);
+    background-color: var(--game-board-bg);
+    border-radius: 8px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.score-area {
+    background-color: var(--bg-color);
+    padding: 15px 25px;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    min-width: 120px;
+}
+
+h2 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1.2em;
+    color: var(--accent-color);
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px rgba(233, 69, 96, 0.5);
+}
+
+p#score {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 2.5em;
+    color: var(--score-color);
+    text-shadow: 0 0 8px var(--score-color), 0 0 3px var(--score-color);
+    margin: 0;
+}
+
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.game-over-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.game-over-content {
+    background-color: var(--primary-color);
+    padding: 40px;
+    border-radius: 15px;
+    border: 3px solid var(--accent-color);
+    box-shadow: 0 0 40px rgba(233, 69, 96, 0.8);
+    text-align: center;
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+
+.game-over-overlay.active .game-over-content {
+    transform: scale(1);
+}
+
+.game-over-content h2 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 2.5em;
+    color: var(--accent-color);
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px var(--accent-color);
+}
+
+.game-over-content p {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.5em;
+    color: var(--text-color);
+    margin-bottom: 30px;
+}
+
+.game-over-content span#finalScore {
+    font-family: 'Press Start 2P', cursive;
+    color: var(--score-color);
+    font-size: 1.2em;
+    margin-left: 10px;
+}
+
+button#restartButton {
+    background-color: var(--accent-color);
+    color: var(--text-color);
+    border: none;
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1.2em;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    box-shadow: 0 5px 15px rgba(233, 69, 96, 0.5);
+}
+
+button#restartButton:hover {
+    background-color: #ff6b8a;
+    transform: translateY(-2px);
+}
+
+button#restartButton:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(233, 69, 96, 0.5);
+}
+
 .start-screen-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--bg-color); /* 背景色を統一 */
+    background-color: var(--bg-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1001; /* ゲームオーバー画面より手前に表示 */
+    z-index: 1001;
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.5s ease, visibility 0.5s ease; /* フェードアウト用アニメーション */
+    transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
-/* activeクラスがない場合は非表示にする */
 .start-screen-overlay:not(.active) {
     opacity: 0;
     visibility: hidden;
-    pointer-events: none; /* クリックイベントを無効化 */
+    pointer-events: none;
 }
 
 .start-screen-content {
@@ -40,13 +194,12 @@ h1.game-title {
 
 .start-screen-content .start-title {
     font-family: 'Press Start 2P', cursive;
-    font-size: 5em; /* タイトルをより大きく */
+    font-size: 5em;
     color: var(--accent-color);
     margin-bottom: 60px;
-    animation: pulse 2s infinite; /* 点滅するようなアニメーション */
+    animation: pulse 2s infinite;
 }
 
-/* タイトルのアニメーション */
 @keyframes pulse {
     0% { transform: scale(1); text-shadow: 0 0 15px var(--accent-color); }
     50% { transform: scale(1.05); text-shadow: 0 0 30px var(--accent-color); }
@@ -68,6 +221,6 @@ h1.game-title {
 
 #startButton:hover {
     background-color: #ff6b8a;
-    transform: translateY(-5px) scale(1.05); /* 少し浮き上がるエフェクト */
+    transform: translateY(-5px) scale(1.05);
     box-shadow: 0 8px 25px rgba(233, 69, 96, 0.8);
 }

@@ -3,22 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>テトリス</title>
+    <title>クールなテトリス</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
+
     <div id="startScreenOverlay" class="start-screen-overlay active">
         <div class="start-screen-content">
             <h1 class="start-title">TETRIS</h1>
             <button id="startButton">Start Game</button>
         </div>
     </div>
+
     <h1 class="game-title">TETRIS</h1>
+
     <div class="game-container">
+        <canvas id="tetris" width="240" height="400"></canvas>
+        <div class="info-panel">
+            <div class="score-area">
+                <h2>SCORE</h2>
+                <p id="score">0</p>
+            </div>
         </div>
+    </div>
+
     <div id="gameOverOverlay" class="game-over-overlay">
+        <div class="game-over-content">
+            <h2>GAME OVER!</h2>
+            <p>Your Score: <span id="finalScore">0</span></p>
+            <button id="restartButton">Restart</button>
         </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
