@@ -40,7 +40,7 @@ h1.game-title {
     border-radius: 15px;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
     border: 2px solid var(--border-color);
-    gap: 0px;
+    gap: 0; /* ← ここをなくしました */
     align-items: flex-start;
 }
 
@@ -58,7 +58,6 @@ canvas#tetris {
     align-items: center;
 }
 
-/* ▼▼▼ level-area と lines-area を追記 ▼▼▼ */
 .score-area, .next-piece-area, .level-area, .lines-area {
     background-color: var(--bg-color);
     padding: 15px 25px;
@@ -83,7 +82,6 @@ h2 {
     text-shadow: 0 0 5px rgba(233, 69, 96, 0.5);
 }
 
-/* ▼▼▼ #level と #lines を追記 ▼▼▼ */
 p#score, p#level, p#lines {
     font-family: 'Press Start 2P', cursive;
     font-size: 2.5em;
