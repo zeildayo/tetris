@@ -58,7 +58,7 @@ canvas#tetris {
     align-items: center;
 }
 
-.score-area {
+.score-area, .next-piece-area {
     background-color: var(--bg-color);
     padding: 15px 25px;
     border-radius: 10px;
@@ -66,6 +66,11 @@ canvas#tetris {
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
     text-align: center;
     min-width: 120px;
+}
+
+#next-piece {
+    background-color: var(--game-board-bg);
+    border-radius: 5px;
 }
 
 h2 {
