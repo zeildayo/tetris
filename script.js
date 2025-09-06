@@ -330,6 +330,15 @@ function drawHoldPiece() {
 function doHold() {
     if (!canHold) return;
 
+    // 現在のピースとホールド中のピースの形を特定
+    const currentPlayerPieceType = PIECES.find(p => JSON.stringify(createPiece(p)) === JSON.stringify(player.matrix));
+    const holdPieceType = holdPiece ? PIECES.find(p => JSON.stringify(createPiece(p)) === JSON.stringify(holdPiece)) : null;
+
+    // 同じ形のピースの場合はホールドしない
+    if (currentPlayerPieceType === holdPieceType) {
+        return;
+    }
+
     if (holdPiece) {
         [player.matrix, holdPiece] = [holdPiece, player.matrix];
         player.pos.y = 0;
