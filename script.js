@@ -160,13 +160,12 @@ function playerRotate() {
 }
 
 // ----- 描画処理 -----
+//【バグ修正】描画関数を全面的に見直し、正しい色で描画されるように修正
 function drawMatrix(matrix, offset, blockSize, context, isGhost = false) {
-    const colorValue = matrix.flat().find(v => v !== 0) || 0;
-    const color = COLORS[colorValue];
-
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
+                const color = COLORS[value]; // 常に正しい色を参照する
                 const drawX = (x + offset.x) * blockSize;
                 const drawY = (y + offset.y) * blockSize;
                 const padding = 2;
@@ -187,6 +186,7 @@ function drawMatrix(matrix, offset, blockSize, context, isGhost = false) {
         });
     });
 }
+
 
 function drawGrid(context) {
     context.strokeStyle = 'rgba(255, 255, 255, 0.1)';
