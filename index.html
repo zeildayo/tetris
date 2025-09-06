@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Pro</title>
-    <link rel="stylesheet" href="style.css">
-     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <title>Tetris Pro</title> <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
 
@@ -13,14 +12,21 @@
         <div class="game-board-container">
             <canvas id="game-board"></canvas>
             <div id="game-overlay">
+                <div id="instructions">
+                    <h2>遊び方</h2>
+                    <p><span>← → / A D</span> : 移動</p>
+                    <p><span>↑ / W</span> : 回転</p>
+                    <p><span>↓ / S</span> : ソフトドロップ</p>
+                    <p><span>スペース</span> : ハードドロップ</p>
+                    <p><span>Esc</span> : ポーズ</p>
+                </div>
                 <button id="start-button">START</button>
                 <div id="pause-text" style="display: none;">PAUSED</div>
             </div>
         </div>
 
         <div class="sidebar">
-            <h1>Tetris Pro</h1>
-            <div class="ui-box">
+            <h1>Tetris Pro</h1> <div class="ui-box">
                 <h2>SCORE</h2>
                 <p id="score">0</p>
             </div>
