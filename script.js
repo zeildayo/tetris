@@ -160,7 +160,8 @@ function playerRotate() {
 }
 
 // ----- 描画処理 -----
-function drawBlock(matrix, offset, blockSize, context) {
+// 【修正点①】分かりやすいように関数名を drawMatrix に変更し、中身も整理
+function drawMatrix(matrix, offset, blockSize, context) {
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
@@ -180,22 +181,42 @@ function drawBlock(matrix, offset, blockSize, context) {
     });
 }
 
+// 【追加②】盤面にグリッドを描画する新しい関数
+function drawGrid(context) {
+    context.strokeStyle = 'rgba(255, 255, 255, 0.1)'; // グリッド線の色
+    context.lineWidth = 1;
+
+    for (let x = 0; x < COLS; x++) {
+        for (let y = 0; y < ROWS; y++) {
+            context.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+    }
+}
+
 function draw() {
-    // 盤面の背景色を黒に変更
     ctx.fillStyle = '#000000'; // 黒色
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    drawBlock(board, {x: 0, y: 0}, BLOCK_SIZE, ctx);
-    drawBlock(player.matrix, player.pos, BLOCK_SIZE, ctx);
+    drawGrid(ctx); // グリッドを描画する処理を追加
+    
+    drawMatrix(board, {x: 0, y: 0}, BLOCK_SIZE, ctx);
+    drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
 }
 
 function drawNextPiece() {
-    nextCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     const piece = player.nextMatrix;
-    const offsetX = (nextCanvas.width / NEXT_CANVAS_BLOCK_SIZE - piece[0].length) / 2;
-    const offsetY = (nextCanvas.height / NEXT_CANVAS_BLOCK_SIZE - piece.length) / 2;
-    drawBlock(piece, {x: offsetX, y: offsetY}, NEXT_CANVAS_BLOCK_SIZE, nextCtx);
+    
+    // 【修正点③】NEXTブロックが中央に表示されるように計算を修正
+    const matrixSize = piece.length; // ピースは正方形のマトリックスを前提とする
+    const blockSize = NEXT_CANVAS_BLOCK_SIZE;
+    const canvasSize = nextCanvas.width; // 縦横同じサイズを前提
+    
+    const offsetX = (canvasSize / blockSize - matrixSize) / 2;
+    const offsetY = (canvasSize / blockSize - matrixSize) / 2;
+    
+    drawMatrix(piece, {x: offsetX, y: offsetY}, blockSize, nextCtx);
 }
 
 function updateUI() {
