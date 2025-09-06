@@ -3,20 +3,21 @@ const canvas = document.getElementById('game-board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
 const nextCtx = nextCanvas.getContext('2d');
+const holdCanvas = document.getElementById('hold-canvas');
+const holdCtx = holdCanvas.getContext('2d');
 const scoreElement = document.getElementById('score');
 const linesElement = document.getElementById('lines');
 const startButton = document.getElementById('start-button');
 const gameOverlay = document.getElementById('game-overlay');
 const pauseText = document.getElementById('pause-text');
+const instructions = document.getElementById('instructions');
 
 // ----- ゲームの基本設定 -----
 const COLS = 10;
 const ROWS = 20;
 const BLOCK_SIZE = 30;
 const NEXT_CANVAS_BLOCK_SIZE = 20;
-
-// 【追加】遊び時間(ミリ秒)と設置無限のリセット回数
-const LOCK_DELAY = 500; // 0.5秒
+const LOCK_DELAY = 500;
 const INFINITY_LIMIT = 15;
 
 // キャンバスのサイズを設定
@@ -28,10 +29,10 @@ let board = createBoard();
 let isPaused = false;
 let isGameOver = false;
 let animationId;
-
-// 【追加】遊び時間と操作回数を管理するタイマー
 let lockDelayTimer;
 let moveCount;
+let holdPiece = null;
+let canHold = true;
 
 const player = {
     pos: { x: 0, y: 0 },
@@ -72,18 +73,25 @@ function collide(board, piece) {
     return false;
 }
 
-function playerReset() {
-    player.matrix = player.nextMatrix || createPiece(PIECES[PIECES.length * Math.random() | 0]);
-    player.nextMatrix = createPiece(PIECES[PIECES.length * Math.random() | 0]);
+function playerReset(consumeNext = true) {
+    if (consumeNext) {
+        player.matrix = player.nextMatrix || createPiece(PIECES[PIECES.length * Math.random() | 0]);
+        player.nextMatrix = createPiece(PIECES[PIECES.length * Math.random() | 0]);
+    } else {
+        player.matrix = createPiece(PIECES[PIECES.length * Math.random() | 0]);
+    }
+    
     player.pos.y = 0;
     player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
-    moveCount = 0; // 操作回数をリセット
+    moveCount = 0;
+    resetHold();
     drawNextPiece();
     if (collide(board, player)) {
         isGameOver = true;
         gameOverlay.style.display = 'flex';
         startButton.textContent = 'RESTART';
         startButton.style.display = 'block';
+        instructions.style.display = 'none';
         pauseText.style.display = 'none';
         alert('GAME OVER');
     }
@@ -132,7 +140,6 @@ function playerDrop() {
 }
 
 function forceLock() {
-    // 最終チェック
     player.pos.y++;
     if(collide(board, player)) {
         player.pos.y--;
@@ -140,7 +147,7 @@ function forceLock() {
         sweepLines();
         playerReset();
     } else {
-        player.pos.y--; // 空中にいる場合
+        player.pos.y--;
     }
     clearTimeout(lockDelayTimer);
     lockDelayTimer = null;
@@ -261,7 +268,6 @@ function draw() {
     drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
 }
 
-// 【重要修正】NEXTピースの表示位置計算を修正
 function drawNextPiece() {
     nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
     nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
@@ -269,7 +275,6 @@ function drawNextPiece() {
     const piece = player.nextMatrix;
     if (!piece) return;
 
-    // ピースの実質の幅と高さを計算
     let minX = piece[0].length, maxX = -1, minY = piece.length, maxY = -1;
     for(let y = 0; y < piece.length; y++) {
         for(let x = 0; x < piece[y].length; x++) {
@@ -285,13 +290,59 @@ function drawNextPiece() {
     const pieceHeight = (maxY - minY + 1);
 
     const blockSize = NEXT_CANVAS_BLOCK_SIZE;
-    const canvasSize = nextCanvas.width; // 120px
+    const canvasSize = nextCanvas.width;
     
-    // 実質の大きさを基にオフセットを計算
     const offsetX = (canvasSize / blockSize - pieceWidth) / 2 - minX;
     const offsetY = (canvasSize / blockSize - pieceHeight) / 2 - minY;
     
     drawMatrix(piece, {x: offsetX, y: offsetY}, blockSize, nextCtx);
+}
+
+// ----- ホールド機能関連の関数 -----
+function drawHoldPiece() {
+    holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
+    holdCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    holdCtx.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+
+    if (holdPiece) {
+        const piece = holdPiece;
+        let minX = piece[0].length, maxX = -1, minY = piece.length, maxY = -1;
+        for(let y = 0; y < piece.length; y++) {
+            for(let x = 0; x < piece[y].length; x++) {
+                if (piece[y][x] !== 0) {
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+        const pieceWidth = (maxX - minX + 1);
+        const pieceHeight = (maxY - minY + 1);
+        const blockSize = NEXT_CANVAS_BLOCK_SIZE;
+        const canvasSize = holdCanvas.width;
+        const offsetX = (canvasSize / blockSize - pieceWidth) / 2 - minX;
+        const offsetY = (canvasSize / blockSize - pieceHeight) / 2 - minY;
+        drawMatrix(piece, {x: offsetX, y: offsetY}, blockSize, holdCtx);
+    }
+}
+
+function doHold() {
+    if (!canHold) return;
+    if (holdPiece) {
+        [player.matrix, holdPiece] = [holdPiece, player.matrix];
+        player.pos.y = 0;
+        player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
+    } else {
+        holdPiece = player.matrix;
+        playerReset();
+    }
+    drawHoldPiece();
+    canHold = false;
+}
+
+function resetHold() {
+    canHold = true;
 }
 
 function updateUI() {
@@ -323,9 +374,13 @@ function startGame() {
     board = createBoard();
     player.score = 0;
     player.lines = 0;
+    holdPiece = null;
+    canHold = true;
     updateUI();
+    drawHoldPiece();
     playerReset();
     gameOverlay.style.display = 'none';
+    instructions.style.display = 'none';
     clearTimeout(lockDelayTimer);
     lockDelayTimer = null;
     update();
@@ -334,29 +389,4 @@ function startGame() {
 startButton.addEventListener('click', startGame);
 
 document.addEventListener('keydown', event => {
-    if (isGameOver) return;
-    const key = event.key.toLowerCase();
-    if (key === 'escape') {
-        isPaused = !isPaused;
-        if (isPaused) {
-            cancelAnimationFrame(animationId);
-            clearTimeout(lockDelayTimer);
-            gameOverlay.style.display = 'flex';
-            startButton.style.display = 'none';
-            pauseText.style.display = 'block';
-        } else {
-            lastTime = performance.now();
-            update();
-        }
-        return;
-    }
-    if (isPaused) return;
-    if (key === 'arrowleft' || key === 'a') playerMove(-1);
-    else if (key === 'arrowright' || key === 'd') playerMove(1);
-    else if (key === 'arrowdown' || key === 's') playerDrop();
-    else if (key === 'arrowup' || key === 'w') playerRotate();
-    else if (key === ' ') {
-        event.preventDefault();
-        playerHardDrop();
-    }
-});
+    if (isGameOver && event.key.toLowerCase() !== 'escape') return;

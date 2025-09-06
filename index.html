@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Pro</title> <link rel="stylesheet" href="style.css">
+    <title>Tetris Pro</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -18,7 +19,7 @@
                     <p><span>↑ / W</span> : 回転</p>
                     <p><span>↓ / S</span> : ソフトドロップ</p>
                     <p><span>スペース</span> : ハードドロップ</p>
-                    <p><span>Esc</span> : ポーズ</p>
+                    <p><span>C / Shift / Tab</span> : ホールド</p> <p><span>Esc</span> : ポーズ</p>
                 </div>
                 <button id="start-button">START</button>
                 <div id="pause-text" style="display: none;">PAUSED</div>
@@ -26,7 +27,12 @@
         </div>
 
         <div class="sidebar">
-            <h1>Tetris Pro</h1> <div class="ui-box">
+            <h1>Tetris Pro</h1>
+            <div class="ui-box">
+                <h2>HOLD</h2>
+                <canvas id="hold-canvas" width="120" height="120"></canvas>
+            </div>
+            <div class="ui-box">
                 <h2>SCORE</h2>
                 <p id="score">0</p>
             </div>
