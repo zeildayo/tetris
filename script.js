@@ -56,6 +56,27 @@ function createPiece(type) {
     if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]];
 }
 
+//【重要追加】7種1巡（セブンバッグ）ロジック
+let pieceBag = [];
+
+function generatePieceBag() {
+    const newBag = [...PIECES];
+    // Fisher-Yates shuffle algorithm
+    for (let i = newBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newBag[i], newBag[j]] = [newBag[j], newBag[i]];
+    }
+    pieceBag = pieceBag.concat(newBag);
+}
+
+function getNextPieceType() {
+    if (pieceBag.length < 2) { // 常に次のピースも参照できるように2つ未満になったら補充
+        generatePieceBag();
+    }
+    return pieceBag.shift(); // 配列の先頭からピースを取り出す
+}
+
+
 // ----- ゲームロジック -----
 function createBoard() {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
@@ -75,10 +96,12 @@ function collide(board, piece) {
 
 function playerReset(consumeNext = true) {
     if (consumeNext) {
-        player.matrix = player.nextMatrix || createPiece(PIECES[PIECES.length * Math.random() | 0]);
-        player.nextMatrix = createPiece(PIECES[PIECES.length * Math.random() | 0]);
+        player.matrix = player.nextMatrix || createPiece(getNextPieceType());
+        player.nextMatrix = createPiece(getNextPieceType());
     } else {
-        player.matrix = createPiece(PIECES[PIECES.length * Math.random() | 0]);
+        // ホールド時にNEXTから補充する場合
+        player.matrix = player.nextMatrix;
+        player.nextMatrix = createPiece(getNextPieceType());
     }
     
     player.pos.y = 0;
@@ -259,13 +282,17 @@ function draw() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGrid(ctx);
 
-    const ghostPos = getGhostPosition();
-    if (player.pos.y < ghostPos.y) {
-        drawMatrix(player.matrix, ghostPos, BLOCK_SIZE, ctx, true);
+    if (!isGameOver) {
+        const ghostPos = getGhostPosition();
+        if (player.pos.y < ghostPos.y) {
+            drawMatrix(player.matrix, ghostPos, BLOCK_SIZE, ctx, true);
+        }
     }
     
     drawMatrix(board, {x: 0, y: 0}, BLOCK_SIZE, ctx);
-    drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
+    if(player.matrix) {
+        drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
+    }
 }
 
 function drawNextPiece() {
@@ -327,15 +354,13 @@ function drawHoldPiece() {
     }
 }
 
-// 【重要修正】ホールド機能のロジックを修正
 function doHold() {
     if (!canHold) return;
 
-    // 現在のピースの形状を特定するための簡易的なIDを作成
-    const getPieceId = (matrix) => matrix.flat().filter(Boolean).join('');
+    const getPieceId = (matrix) => matrix ? matrix.flat().filter(Boolean).join('') : null;
     
     if (holdPiece && getPieceId(player.matrix) === getPieceId(holdPiece)) {
-        return; // 同じ形のピースなら何もしない
+        return;
     }
 
     if (holdPiece) {
@@ -386,6 +411,7 @@ function startGame() {
     player.lines = 0;
     holdPiece = null;
     canHold = true;
+    pieceBag = []; // ピースバッグを初期化
     updateUI();
     drawHoldPiece();
     playerReset();
