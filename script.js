@@ -160,12 +160,11 @@ function playerRotate() {
 }
 
 // ----- 描画処理 -----
-//【バグ修正】描画関数を全面的に見直し、正しい色で描画されるように修正
 function drawMatrix(matrix, offset, blockSize, context, isGhost = false) {
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                const color = COLORS[value]; // 常に正しい色を参照する
+                const color = COLORS[value];
                 const drawX = (x + offset.x) * blockSize;
                 const drawY = (y + offset.y) * blockSize;
                 const padding = 2;
@@ -222,8 +221,11 @@ function draw() {
 }
 
 function drawNextPiece() {
+    // 【重要修正】描画する前に必ずキャンバスをクリアする処理を追加
+    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
     nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+
     const piece = player.nextMatrix;
     if (!piece) return;
     const matrixSize = piece.length;
