@@ -160,17 +160,19 @@ function playerRotate() {
 }
 
 // ----- 描画処理 -----
-// 【修正点①】分かりやすいように関数名を drawMatrix に変更し、中身も整理
 function drawMatrix(matrix, offset, blockSize, context) {
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
                 context.fillStyle = COLORS[value];
                 const padding = 2;
+                const drawX = (x + offset.x) * blockSize;
+                const drawY = (y + offset.y) * blockSize;
+                
                 context.beginPath();
                 context.roundRect(
-                    (x + offset.x) * blockSize + padding,
-                    (y + offset.y) * blockSize + padding,
+                    drawX + padding,
+                    drawY + padding,
                     blockSize - padding * 2,
                     blockSize - padding * 2,
                     [5]
@@ -181,11 +183,9 @@ function drawMatrix(matrix, offset, blockSize, context) {
     });
 }
 
-// 【追加②】盤面にグリッドを描画する新しい関数
 function drawGrid(context) {
-    context.strokeStyle = 'rgba(255, 255, 255, 0.1)'; // グリッド線の色
+    context.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     context.lineWidth = 1;
-
     for (let x = 0; x < COLS; x++) {
         for (let y = 0; y < ROWS; y++) {
             context.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
@@ -193,11 +193,42 @@ function drawGrid(context) {
     }
 }
 
-function draw() {
-    ctx.fillStyle = '#000000'; // 黒色
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+// 【追加①】ゴーストピースを描画する新しい関数
+function drawGhostPiece() {
+    const ghostPos = { ...player.pos };
+    // 衝突するまで下に移動させ、最終位置を特定
+    while (!collide(board, { matrix: player.matrix, pos: ghostPos })) {
+        ghostPos.y++;
+    }
+    ghostPos.y--; // 衝突した位置の1つ上に戻す
 
-    drawGrid(ctx); // グリッドを描画する処理を追加
+    // ゴーストピースの描画
+    const matrix = player.matrix;
+    const offset = ghostPos;
+    const color = COLORS[matrix.flat().find(v => v !== 0)]; // ピースの色を取得
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    
+    matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                const drawX = (x + offset.x) * BLOCK_SIZE;
+                const drawY = (y + offset.y) * BLOCK_SIZE;
+                ctx.strokeRect(drawX + 1, drawY + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+            }
+        });
+    });
+}
+
+
+function draw() {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    drawGrid(ctx);
+    
+    drawGhostPiece(); // 【追加②】ゴーストピースを描画
     
     drawMatrix(board, {x: 0, y: 0}, BLOCK_SIZE, ctx);
     drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
@@ -207,15 +238,11 @@ function drawNextPiece() {
     nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     const piece = player.nextMatrix;
-    
-    // 【修正点③】NEXTブロックが中央に表示されるように計算を修正
-    const matrixSize = piece.length; // ピースは正方形のマトリックスを前提とする
+    const matrixSize = piece.length;
     const blockSize = NEXT_CANVAS_BLOCK_SIZE;
-    const canvasSize = nextCanvas.width; // 縦横同じサイズを前提
-    
+    const canvasSize = nextCanvas.width;
     const offsetX = (canvasSize / blockSize - matrixSize) / 2;
     const offsetY = (canvasSize / blockSize - matrixSize) / 2;
-    
     drawMatrix(piece, {x: offsetX, y: offsetY}, blockSize, nextCtx);
 }
 
@@ -257,7 +284,6 @@ startButton.addEventListener('click', startGame);
 document.addEventListener('keydown', event => {
     if (isGameOver) return;
     const key = event.key.toLowerCase();
-
     if (key === 'escape') {
         isPaused = !isPaused;
         if (isPaused) {
@@ -271,9 +297,7 @@ document.addEventListener('keydown', event => {
         }
         return;
     }
-
     if (isPaused) return;
-
     if (key === 'arrowleft' || key === 'a') playerMove(-1);
     else if (key === 'arrowright' || key === 'd') playerMove(1);
     else if (key === 'arrowdown' || key === 's') playerDrop();
