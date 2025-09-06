@@ -327,16 +327,15 @@ function drawHoldPiece() {
     }
 }
 
+// 【重要修正】ホールド機能のロジックを修正
 function doHold() {
     if (!canHold) return;
 
-    // 現在のピースとホールド中のピースの形を特定
-    const currentPlayerPieceType = PIECES.find(p => JSON.stringify(createPiece(p)) === JSON.stringify(player.matrix));
-    const holdPieceType = holdPiece ? PIECES.find(p => JSON.stringify(createPiece(p)) === JSON.stringify(holdPiece)) : null;
-
-    // 同じ形のピースの場合はホールドしない
-    if (currentPlayerPieceType === holdPieceType) {
-        return;
+    // 現在のピースの形状を特定するための簡易的なIDを作成
+    const getPieceId = (matrix) => matrix.flat().filter(Boolean).join('');
+    
+    if (holdPiece && getPieceId(player.matrix) === getPieceId(holdPiece)) {
+        return; // 同じ形のピースなら何もしない
     }
 
     if (holdPiece) {
