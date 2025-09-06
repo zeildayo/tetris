@@ -329,6 +329,7 @@ function drawHoldPiece() {
 
 function doHold() {
     if (!canHold) return;
+
     if (holdPiece) {
         [player.matrix, holdPiece] = [holdPiece, player.matrix];
         player.pos.y = 0;
@@ -337,6 +338,7 @@ function doHold() {
         holdPiece = player.matrix;
         playerReset();
     }
+    
     drawHoldPiece();
     canHold = false;
 }
@@ -390,3 +392,33 @@ startButton.addEventListener('click', startGame);
 
 document.addEventListener('keydown', event => {
     if (isGameOver && event.key.toLowerCase() !== 'escape') return;
+    const key = event.key.toLowerCase();
+    if (key === 'escape') {
+        isPaused = !isPaused;
+        if (isPaused) {
+            cancelAnimationFrame(animationId);
+            clearTimeout(lockDelayTimer);
+            gameOverlay.style.display = 'flex';
+            startButton.style.display = 'none';
+            pauseText.style.display = 'block';
+        } else {
+            lastTime = performance.now();
+            update();
+        }
+        return;
+    }
+    if (isPaused) return;
+
+    if (key === 'arrowleft' || key === 'a') playerMove(-1);
+    else if (key === 'arrowright' || key === 'd') playerMove(1);
+    else if (key === 'arrowdown' || key === 's') playerDrop();
+    else if (key === 'arrowup' || key === 'w') playerRotate();
+    else if (key === ' ') {
+        event.preventDefault();
+        playerHardDrop();
+    }
+    else if (key === 'c' || key === 'shift' || key === 'tab') {
+        event.preventDefault();
+        doHold();
+    }
+});
