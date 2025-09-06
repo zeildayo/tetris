@@ -52,7 +52,6 @@ function createBoard() {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 }
 
-// 【重要修正①】collide関数が引数を取れるように変更
 function collide(board, piece) {
     const [m, o] = [piece.matrix, piece.pos];
     for (let y = 0; y < m.length; ++y) {
@@ -71,8 +70,7 @@ function playerReset() {
     player.pos.y = 0;
     player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
     drawNextPiece();
-
-    if (collide(board, player)) { // 引数を渡すように修正
+    if (collide(board, player)) {
         isGameOver = true;
         gameOverlay.style.display = 'flex';
         startButton.textContent = 'RESTART';
@@ -112,7 +110,7 @@ function sweepLines() {
 
 function playerDrop() {
     player.pos.y++;
-    if (collide(board, player)) { // 引数を渡すように修正
+    if (collide(board, player)) {
         player.pos.y--;
         merge();
         sweepLines();
@@ -122,9 +120,7 @@ function playerDrop() {
 }
 
 function playerHardDrop() {
-    while (!collide(board, player)) { // 引数を渡すように修正
-        player.pos.y++;
-    }
+    while (!collide(board, player)) player.pos.y++;
     player.pos.y--;
     merge();
     sweepLines();
@@ -134,9 +130,7 @@ function playerHardDrop() {
 
 function playerMove(dir) {
     player.pos.x += dir;
-    if (collide(board, player)) { // 引数を渡すように修正
-        player.pos.x -= dir;
-    }
+    if (collide(board, player)) player.pos.x -= dir;
 }
 
 function rotate(matrix) {
@@ -152,7 +146,7 @@ function playerRotate() {
     const pos = player.pos.x;
     let offset = 1;
     rotate(player.matrix);
-    while (collide(board, player)) { // 引数を渡すように修正
+    while (collide(board, player)) {
         player.pos.x += offset;
         offset = -(offset + (offset > 0 ? 1 : -1));
         if (offset > player.matrix[0].length) {
@@ -166,23 +160,29 @@ function playerRotate() {
 }
 
 // ----- 描画処理 -----
-function drawMatrix(matrix, offset, blockSize, context) {
+function drawMatrix(matrix, offset, blockSize, context, isGhost = false) {
+    const colorValue = matrix.flat().find(v => v !== 0) || 0;
+    const color = COLORS[colorValue];
+
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                context.fillStyle = COLORS[value];
-                const padding = 2;
                 const drawX = (x + offset.x) * blockSize;
                 const drawY = (y + offset.y) * blockSize;
-                context.beginPath();
-                context.roundRect(
-                    drawX + padding,
-                    drawY + padding,
-                    blockSize - padding * 2,
-                    blockSize - padding * 2,
-                    [5]
-                );
-                context.fill();
+                const padding = 2;
+
+                if (isGhost) {
+                    context.strokeStyle = color;
+                    context.lineWidth = 2;
+                    context.beginPath();
+                    context.roundRect(drawX + padding, drawY + padding, blockSize - padding * 2, blockSize - padding * 2, [5]);
+                    context.stroke();
+                } else {
+                    context.fillStyle = color;
+                    context.beginPath();
+                    context.roundRect(drawX + padding, drawY + padding, blockSize - padding * 2, blockSize - padding * 2, [5]);
+                    context.fill();
+                }
             }
         });
     });
@@ -198,38 +198,25 @@ function drawGrid(context) {
     }
 }
 
-function drawGhostPiece() {
-    const ghost = {
-        ...player,
-        pos: { ...player.pos }
-    };
-    while (!collide(board, ghost)) { // 引数を渡すことで正しく動作
+function getGhostPosition() {
+    const ghost = { ...player, pos: { ...player.pos } };
+    while (!collide(board, ghost)) {
         ghost.pos.y++;
     }
     ghost.pos.y--;
-
-    const color = COLORS[ghost.matrix.flat().find(v => v !== 0)];
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    
-    ghost.matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                const drawX = (x + ghost.pos.x) * BLOCK_SIZE;
-                const drawY = (y + ghost.pos.y) * BLOCK_SIZE;
-                ctx.strokeRect(drawX + 1, drawY + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
-            }
-        });
-    });
+    return ghost.pos;
 }
 
 function draw() {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGrid(ctx);
-    if (!isGameOver) {
-        drawGhostPiece();
+
+    const ghostPos = getGhostPosition();
+    if (player.pos.y < ghostPos.y) {
+        drawMatrix(player.matrix, ghostPos, BLOCK_SIZE, ctx, true);
     }
+    
     drawMatrix(board, {x: 0, y: 0}, BLOCK_SIZE, ctx);
     drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
 }
@@ -238,6 +225,7 @@ function drawNextPiece() {
     nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     const piece = player.nextMatrix;
+    if (!piece) return;
     const matrixSize = piece.length;
     const blockSize = NEXT_CANVAS_BLOCK_SIZE;
     const canvasSize = nextCanvas.width;
