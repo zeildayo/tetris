@@ -15,6 +15,10 @@ const ROWS = 20;
 const BLOCK_SIZE = 30;
 const NEXT_CANVAS_BLOCK_SIZE = 20;
 
+// 【追加】遊び時間(ミリ秒)と設置無限のリセット回数
+const LOCK_DELAY = 500; // 0.5秒
+const INFINITY_LIMIT = 15;
+
 // キャンバスのサイズを設定
 ctx.canvas.width = COLS * BLOCK_SIZE;
 ctx.canvas.height = ROWS * BLOCK_SIZE;
@@ -24,6 +28,10 @@ let board = createBoard();
 let isPaused = false;
 let isGameOver = false;
 let animationId;
+
+// 【追加】遊び時間と操作回数を管理するタイマー
+let lockDelayTimer;
+let moveCount;
 
 const player = {
     pos: { x: 0, y: 0 },
@@ -108,15 +116,40 @@ function sweepLines() {
     }
 }
 
+// 【重要修正】ブロックの落下と固定ロジック
 function playerDrop() {
+    player.pos.y++;
+    if (collide(board, player)) {
+        player.pos.y--;
+        // 衝突したらタイマーを開始
+        if (!lockDelayTimer) {
+            lockDelayTimer = setTimeout(() => {
+                forceLock();
+            }, LOCK_DELAY);
+        }
+    } else {
+        // 공중에 있을 때는 타이머를 리셋
+        clearTimeout(lockDelayTimer);
+        lockDelayTimer = null;
+    }
+    dropCounter = 0;
+}
+
+// 【追加】強制的にブロックを固定する関数
+function forceLock() {
+    // もう一度最終チェック
     player.pos.y++;
     if (collide(board, player)) {
         player.pos.y--;
         merge();
         sweepLines();
         playerReset();
+    } else {
+        // 固定されるはずが空中にいる場合(稀なケース)
+        player.pos.y--;
     }
-    dropCounter = 0;
+    clearTimeout(lockDelayTimer);
+    lockDelayTimer = null;
 }
 
 function playerHardDrop() {
@@ -126,11 +159,28 @@ function playerHardDrop() {
     sweepLines();
     playerReset();
     dropCounter = 0;
+    clearTimeout(lockDelayTimer); // ハードドロップ後はタイマーをキャンセル
+    lockDelayTimer = null;
+}
+
+// 【重要修正】移動と回転でタイマーをリセット
+function handleMove() {
+    if (lockDelayTimer && moveCount < INFINITY_LIMIT) {
+        clearTimeout(lockDelayTimer);
+        lockDelayTimer = setTimeout(() => {
+            forceLock();
+        }, LOCK_DELAY);
+        moveCount++;
+    }
 }
 
 function playerMove(dir) {
     player.pos.x += dir;
-    if (collide(board, player)) player.pos.x -= dir;
+    if (collide(board, player)) {
+        player.pos.x -= dir;
+    } else {
+        handleMove();
+    }
 }
 
 function rotate(matrix) {
@@ -157,6 +207,7 @@ function playerRotate() {
             return;
         }
     }
+    handleMove();
 }
 
 // ----- 描画処理 -----
@@ -185,7 +236,6 @@ function drawMatrix(matrix, offset, blockSize, context, isGhost = false) {
         });
     });
 }
-
 
 function drawGrid(context) {
     context.strokeStyle = 'rgba(255, 255, 255, 0.1)';
@@ -221,11 +271,9 @@ function draw() {
 }
 
 function drawNextPiece() {
-    // 【重要修正】描画する前に必ずキャンバスをクリアする処理を追加
     nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
     nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
-
     const piece = player.nextMatrix;
     if (!piece) return;
     const matrixSize = piece.length;
@@ -251,7 +299,9 @@ function update(time = 0) {
     const deltaTime = time - lastTime;
     lastTime = time;
     dropCounter += deltaTime;
-    if (dropCounter > dropInterval) playerDrop();
+    if (dropCounter > dropInterval && !lockDelayTimer) { // 遊び時間中は自動落下しない
+        playerDrop();
+    }
     draw();
     animationId = requestAnimationFrame(update);
 }
@@ -266,6 +316,8 @@ function startGame() {
     updateUI();
     playerReset();
     gameOverlay.style.display = 'none';
+    clearTimeout(lockDelayTimer);
+    lockDelayTimer = null;
     update();
 }
 
@@ -278,11 +330,12 @@ document.addEventListener('keydown', event => {
         isPaused = !isPaused;
         if (isPaused) {
             cancelAnimationFrame(animationId);
+            clearTimeout(lockDelayTimer);
             gameOverlay.style.display = 'flex';
             startButton.style.display = 'none';
             pauseText.style.display = 'block';
         } else {
-            gameOverlay.style.display = 'none';
+            lastTime = performance.now(); // ポーズ解除時の時間差を補正
             update();
         }
         return;
