@@ -1,6 +1,5 @@
 /* 全体の基本設定 */
 body {
-    /* 落ち着いた夕暮れ〜夜空のグラデーションに変更 */
     background: linear-gradient(to top, #302b63 0%, #24243e 100%);
     font-family: 'Arial Rounded MT Bold', sans-serif;
     color: #fff;
@@ -14,10 +13,9 @@ body {
 /* ゲーム全体を囲むラッパー */
 .game-wrapper {
     display: flex;
-    gap: 30px; /* ゲーム盤とサイドバーの間隔 */
-    align-items: flex-start; /* 上端揃え */
+    gap: 30px;
+    align-items: flex-start;
     padding: 20px;
-    /* 背景を少し暗くしてガラスのような質感を強調 */
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -25,8 +23,7 @@ body {
 
 /* ゲーム盤面コンテナ（オーバーレイの基準） */
 .game-board-container {
-    position: relative; /* オーバーレイを重ねるための基準 */
-    /* 枠線の色を背景に馴染むように調整 */
+    position: relative;
     border: 10px solid rgba(255, 255, 255, 0.2);
     border-radius: 15px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -44,73 +41,4 @@ canvas#game-board {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* 背景を少し濃く */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    border-radius: 5px;
-}
-
-#start-button {
-    padding: 15px 40px;
-    font-size: 24px;
-    font-family: 'Arial Rounded MT Bold', sans-serif;
-    color: #5b559e; /* 文字色をテーマに合わせる */
-    background-color: white;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-#start-button:hover {
-    transform: scale(1.1);
-}
-
-#pause-text {
-    font-size: 40px;
-    font-weight: bold;
-    text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-}
-
-
-/* 右側のサイドバー */
-.sidebar {
-    width: 200px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-}
-
-.sidebar h1 {
-    font-size: 2rem;
-    margin: 0;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-}
-
-/* スコアやNEXTを入れるボックス */
-.ui-box {
-    background-color: rgba(255, 255, 255, 0.15); /* 背景をテーマに合わせる */
-    border-radius: 15px;
-    padding: 15px;
-}
-
-.ui-box h2 {
-    margin: 0 0 10px 0;
-    font-size: 1.2rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-    padding-bottom: 5px;
-}
-
-.ui-box p {
-    margin: 0;
-    font-size: 2.5rem;
-    font-weight: bold;
-}
-
-canvas#next-canvas {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-}
+    background-color: rgba(0, 0, 0, 0.
