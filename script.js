@@ -52,6 +52,19 @@ function createBoard() {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 }
 
+// 【重要修正①】collide関数が引数を取れるように変更
+function collide(board, piece) {
+    const [m, o] = [piece.matrix, piece.pos];
+    for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+            if (m[y][x] !== 0 && (board[y + o.y] && board[y + o.y][x + o.x]) !== 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function playerReset() {
     player.matrix = player.nextMatrix || createPiece(PIECES[PIECES.length * Math.random() | 0]);
     player.nextMatrix = createPiece(PIECES[PIECES.length * Math.random() | 0]);
@@ -59,7 +72,7 @@ function playerReset() {
     player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
     drawNextPiece();
 
-    if (collide()) {
+    if (collide(board, player)) { // 引数を渡すように修正
         isGameOver = true;
         gameOverlay.style.display = 'flex';
         startButton.textContent = 'RESTART';
@@ -67,17 +80,6 @@ function playerReset() {
         pauseText.style.display = 'none';
         alert('GAME OVER');
     }
-}
-
-function collide() {
-    for (let y = 0; y < player.matrix.length; ++y) {
-        for (let x = 0; x < player.matrix[y].length; ++x) {
-            if (player.matrix[y][x] !== 0 && (board[y + player.pos.y] && board[y + player.pos.y][x + player.pos.x]) !== 0) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 function merge() {
@@ -110,7 +112,7 @@ function sweepLines() {
 
 function playerDrop() {
     player.pos.y++;
-    if (collide()) {
+    if (collide(board, player)) { // 引数を渡すように修正
         player.pos.y--;
         merge();
         sweepLines();
@@ -120,7 +122,9 @@ function playerDrop() {
 }
 
 function playerHardDrop() {
-    while (!collide()) player.pos.y++;
+    while (!collide(board, player)) { // 引数を渡すように修正
+        player.pos.y++;
+    }
     player.pos.y--;
     merge();
     sweepLines();
@@ -130,7 +134,9 @@ function playerHardDrop() {
 
 function playerMove(dir) {
     player.pos.x += dir;
-    if (collide()) player.pos.x -= dir;
+    if (collide(board, player)) { // 引数を渡すように修正
+        player.pos.x -= dir;
+    }
 }
 
 function rotate(matrix) {
@@ -146,7 +152,7 @@ function playerRotate() {
     const pos = player.pos.x;
     let offset = 1;
     rotate(player.matrix);
-    while (collide()) {
+    while (collide(board, player)) { // 引数を渡すように修正
         player.pos.x += offset;
         offset = -(offset + (offset > 0 ? 1 : -1));
         if (offset > player.matrix[0].length) {
@@ -168,7 +174,6 @@ function drawMatrix(matrix, offset, blockSize, context) {
                 const padding = 2;
                 const drawX = (x + offset.x) * blockSize;
                 const drawY = (y + offset.y) * blockSize;
-                
                 context.beginPath();
                 context.roundRect(
                     drawX + padding,
@@ -193,43 +198,38 @@ function drawGrid(context) {
     }
 }
 
-// 【追加①】ゴーストピースを描画する新しい関数
 function drawGhostPiece() {
-    const ghostPos = { ...player.pos };
-    // 衝突するまで下に移動させ、最終位置を特定
-    while (!collide(board, { matrix: player.matrix, pos: ghostPos })) {
-        ghostPos.y++;
+    const ghost = {
+        ...player,
+        pos: { ...player.pos }
+    };
+    while (!collide(board, ghost)) { // 引数を渡すことで正しく動作
+        ghost.pos.y++;
     }
-    ghostPos.y--; // 衝突した位置の1つ上に戻す
+    ghost.pos.y--;
 
-    // ゴーストピースの描画
-    const matrix = player.matrix;
-    const offset = ghostPos;
-    const color = COLORS[matrix.flat().find(v => v !== 0)]; // ピースの色を取得
-
+    const color = COLORS[ghost.matrix.flat().find(v => v !== 0)];
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     
-    matrix.forEach((row, y) => {
+    ghost.matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                const drawX = (x + offset.x) * BLOCK_SIZE;
-                const drawY = (y + offset.y) * BLOCK_SIZE;
+                const drawX = (x + ghost.pos.x) * BLOCK_SIZE;
+                const drawY = (y + ghost.pos.y) * BLOCK_SIZE;
                 ctx.strokeRect(drawX + 1, drawY + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
             }
         });
     });
 }
 
-
 function draw() {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
     drawGrid(ctx);
-    
-    drawGhostPiece(); // 【追加②】ゴーストピースを描画
-    
+    if (!isGameOver) {
+        drawGhostPiece();
+    }
     drawMatrix(board, {x: 0, y: 0}, BLOCK_SIZE, ctx);
     drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
 }
