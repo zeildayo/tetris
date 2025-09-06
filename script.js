@@ -181,8 +181,10 @@ function drawBlock(matrix, offset, blockSize, context) {
 }
 
 function draw() {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    // 盤面の背景色を黒に変更
+    ctx.fillStyle = '#000000'; // 黒色
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     drawBlock(board, {x: 0, y: 0}, BLOCK_SIZE, ctx);
     drawBlock(player.matrix, player.pos, BLOCK_SIZE, ctx);
 }
