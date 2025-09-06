@@ -77,6 +77,7 @@ function playerReset() {
     player.nextMatrix = createPiece(PIECES[PIECES.length * Math.random() | 0]);
     player.pos.y = 0;
     player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
+    moveCount = 0; // 操作回数をリセット
     drawNextPiece();
     if (collide(board, player)) {
         isGameOver = true;
@@ -116,37 +117,30 @@ function sweepLines() {
     }
 }
 
-// 【重要修正】ブロックの落下と固定ロジック
 function playerDrop() {
     player.pos.y++;
     if (collide(board, player)) {
         player.pos.y--;
-        // 衝突したらタイマーを開始
         if (!lockDelayTimer) {
-            lockDelayTimer = setTimeout(() => {
-                forceLock();
-            }, LOCK_DELAY);
+            lockDelayTimer = setTimeout(forceLock, LOCK_DELAY);
         }
     } else {
-        // 공중에 있을 때는 타이머를 리셋
         clearTimeout(lockDelayTimer);
         lockDelayTimer = null;
     }
     dropCounter = 0;
 }
 
-// 【追加】強制的にブロックを固定する関数
 function forceLock() {
-    // もう一度最終チェック
+    // 最終チェック
     player.pos.y++;
-    if (collide(board, player)) {
+    if(collide(board, player)) {
         player.pos.y--;
         merge();
         sweepLines();
         playerReset();
     } else {
-        // 固定されるはずが空中にいる場合(稀なケース)
-        player.pos.y--;
+        player.pos.y--; // 空中にいる場合
     }
     clearTimeout(lockDelayTimer);
     lockDelayTimer = null;
@@ -159,17 +153,14 @@ function playerHardDrop() {
     sweepLines();
     playerReset();
     dropCounter = 0;
-    clearTimeout(lockDelayTimer); // ハードドロップ後はタイマーをキャンセル
+    clearTimeout(lockDelayTimer);
     lockDelayTimer = null;
 }
 
-// 【重要修正】移動と回転でタイマーをリセット
 function handleMove() {
     if (lockDelayTimer && moveCount < INFINITY_LIMIT) {
         clearTimeout(lockDelayTimer);
-        lockDelayTimer = setTimeout(() => {
-            forceLock();
-        }, LOCK_DELAY);
+        lockDelayTimer = setTimeout(forceLock, LOCK_DELAY);
         moveCount++;
     }
 }
@@ -270,17 +261,36 @@ function draw() {
     drawMatrix(player.matrix, player.pos, BLOCK_SIZE, ctx);
 }
 
+// 【重要修正】NEXTピースの表示位置計算を修正
 function drawNextPiece() {
     nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
     nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     const piece = player.nextMatrix;
     if (!piece) return;
-    const matrixSize = piece.length;
+
+    // ピースの実質の幅と高さを計算
+    let minX = piece[0].length, maxX = -1, minY = piece.length, maxY = -1;
+    for(let y = 0; y < piece.length; y++) {
+        for(let x = 0; x < piece[y].length; x++) {
+            if (piece[y][x] !== 0) {
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+        }
+    }
+    const pieceWidth = (maxX - minX + 1);
+    const pieceHeight = (maxY - minY + 1);
+
     const blockSize = NEXT_CANVAS_BLOCK_SIZE;
-    const canvasSize = nextCanvas.width;
-    const offsetX = (canvasSize / blockSize - matrixSize) / 2;
-    const offsetY = (canvasSize / blockSize - matrixSize) / 2;
+    const canvasSize = nextCanvas.width; // 120px
+    
+    // 実質の大きさを基にオフセットを計算
+    const offsetX = (canvasSize / blockSize - pieceWidth) / 2 - minX;
+    const offsetY = (canvasSize / blockSize - pieceHeight) / 2 - minY;
+    
     drawMatrix(piece, {x: offsetX, y: offsetY}, blockSize, nextCtx);
 }
 
@@ -299,7 +309,7 @@ function update(time = 0) {
     const deltaTime = time - lastTime;
     lastTime = time;
     dropCounter += deltaTime;
-    if (dropCounter > dropInterval && !lockDelayTimer) { // 遊び時間中は自動落下しない
+    if (dropCounter > dropInterval && !lockDelayTimer) {
         playerDrop();
     }
     draw();
@@ -335,7 +345,7 @@ document.addEventListener('keydown', event => {
             startButton.style.display = 'none';
             pauseText.style.display = 'block';
         } else {
-            lastTime = performance.now(); // ポーズ解除時の時間差を補正
+            lastTime = performance.now();
             update();
         }
         return;
