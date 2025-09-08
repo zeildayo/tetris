@@ -45,6 +45,7 @@ const player = {
 // ----- 色と形の定義 -----
 const COLORS = [ null, '#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF' ];
 const PIECES = 'ILJOTSZ';
+let pieceBag = [];
 
 function createPiece(type) {
     if (type === 'T') return [[0, 1, 0], [1, 1, 1], [0, 0, 0]];
@@ -56,12 +57,8 @@ function createPiece(type) {
     if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]];
 }
 
-//【重要追加】7種1巡（セブンバッグ）ロジック
-let pieceBag = [];
-
 function generatePieceBag() {
     const newBag = [...PIECES];
-    // Fisher-Yates shuffle algorithm
     for (let i = newBag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [newBag[i], newBag[j]] = [newBag[j], newBag[i]];
@@ -70,12 +67,11 @@ function generatePieceBag() {
 }
 
 function getNextPieceType() {
-    if (pieceBag.length < 2) { // 常に次のピースも参照できるように2つ未満になったら補充
+    if (pieceBag.length < 2) {
         generatePieceBag();
     }
-    return pieceBag.shift(); // 配列の先頭からピースを取り出す
+    return pieceBag.shift();
 }
-
 
 // ----- ゲームロジック -----
 function createBoard() {
@@ -99,7 +95,6 @@ function playerReset(consumeNext = true) {
         player.matrix = player.nextMatrix || createPiece(getNextPieceType());
         player.nextMatrix = createPiece(getNextPieceType());
     } else {
-        // ホールド時にNEXTから補充する場合
         player.matrix = player.nextMatrix;
         player.nextMatrix = createPiece(getNextPieceType());
     }
@@ -282,7 +277,7 @@ function draw() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGrid(ctx);
 
-    if (!isGameOver) {
+    if (!isGameOver && player.matrix) {
         const ghostPos = getGhostPosition();
         if (player.pos.y < ghostPos.y) {
             drawMatrix(player.matrix, ghostPos, BLOCK_SIZE, ctx, true);
@@ -315,13 +310,10 @@ function drawNextPiece() {
     }
     const pieceWidth = (maxX - minX + 1);
     const pieceHeight = (maxY - minY + 1);
-
     const blockSize = NEXT_CANVAS_BLOCK_SIZE;
     const canvasSize = nextCanvas.width;
-    
     const offsetX = (canvasSize / blockSize - pieceWidth) / 2 - minX;
     const offsetY = (canvasSize / blockSize - pieceHeight) / 2 - minY;
-    
     drawMatrix(piece, {x: offsetX, y: offsetY}, blockSize, nextCtx);
 }
 
@@ -356,13 +348,10 @@ function drawHoldPiece() {
 
 function doHold() {
     if (!canHold) return;
-
     const getPieceId = (matrix) => matrix ? matrix.flat().filter(Boolean).join('') : null;
-    
     if (holdPiece && getPieceId(player.matrix) === getPieceId(holdPiece)) {
         return;
     }
-
     if (holdPiece) {
         [player.matrix, holdPiece] = [holdPiece, player.matrix];
         player.pos.y = 0;
@@ -371,7 +360,6 @@ function doHold() {
         holdPiece = player.matrix;
         playerReset();
     }
-    
     drawHoldPiece();
     canHold = false;
 }
@@ -411,7 +399,7 @@ function startGame() {
     player.lines = 0;
     holdPiece = null;
     canHold = true;
-    pieceBag = []; // ピースバッグを初期化
+    pieceBag = [];
     updateUI();
     drawHoldPiece();
     playerReset();
@@ -436,6 +424,8 @@ document.addEventListener('keydown', event => {
             startButton.style.display = 'none';
             pauseText.style.display = 'block';
         } else {
+            // 【重要修正】ポーズ解除時にオーバーレイを非表示にする
+            gameOverlay.style.display = 'none';
             lastTime = performance.now();
             update();
         }
